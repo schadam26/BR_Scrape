@@ -1,0 +1,3 @@
+/boxscores/202101200TOR.html
+/boxscores/202101200GSW.html
+/boxscores/202101200HOU.html
