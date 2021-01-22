@@ -3,7 +3,12 @@ import re, os, requests
 from bs4 import BeautifulSoup as bsp
 
 t = open('gamelinks.txt','r')
-donet = open('donelinks.txt','r')
+try:
+    donet = open('donelinks.txt','r')
+except:
+    donet = open('donelinks.txt','w')
+    donet.close()
+    donet = open('donelinks.txt','r')
 game_links = [x.replace('\n','') for x in t.readlines()]
 done_links = [x.replace('\n','') for x in donet.readlines()]
 game_links = [x for x in game_links if x not in done_links]
