@@ -1,14 +1,24 @@
 from time import sleep
 import re, os, requests
 from bs4 import BeautifulSoup as bsp
+import pandas as pd
+from timeit import default_timer as timer
+import csv
+import numpy as np
 
 t = open('gamelinks.txt','r')
 try:
     donet = open('donelinks.txt','r')
+    #plays_df = pd.read_csv('./pbp_pandas_2011_18.csv')
 except:
     donet = open('donelinks.txt','w')
     donet.close()
     donet = open('donelinks.txt','r')
+    plays_df = pd.DataFrame(columns=['URL','GameType','Location','Date','Time','WinningTeam','Quarter','SecLeft','AwayTeam','AwayPlay',
+                                     'AwayScore','HomeTeam','HomePlay','HomeScore','Shooter','ShotType','ShotOutcome','ShotDist','Assister',
+                                     'Blocker','FoulType','Fouler','Fouled','Rebounder','ReboundType','ViolationPlayer','ViolationType',
+                                     'TimeoutTeam','FreeThrowShooter','FreeThrowOutcome','FreeThrowNum','EnterGame','LeaveGame','TurnoverPlayer',
+                                     'TurnoverType','TurnoverCause','TurnoverCauser','JumpballAwayPlayer','JumpballHomePlayer','JumpballPoss'])
 game_links = [x.replace('\n','') for x in t.readlines()]
 done_links = [x.replace('\n','') for x in donet.readlines()]
 game_links = [x for x in game_links if x not in done_links]
@@ -327,16 +337,16 @@ def breakdown(plays):
             else:
                 brek[-13] = brek[11]
     return broke
-
-y = open('output_pbp.csv','a')
-if os.stat('output_pbp.csv').st_size == 0:
-    y.write('URL,GameType,Location,Date,Time,WinningTeam,Quarter,SecLeft,AwayTeam,AwayPlay,AwayScore,HomeTeam,HomePlay,HomeScore,Shooter,ShotType,ShotOutcome,ShotDist,Assister,Blocker,FoulType,Fouler,Fouled,Rebounder,ReboundType,ViolationPlayer,ViolationType,TimeoutTeam,FreeThrowShooter,FreeThrowOutcome,FreeThrowNum,EnterGame,LeaveGame,TurnoverPlayer,TurnoverType,TurnoverCause,TurnoverCauser,JumpballAwayPlayer,JumpballHomePlayer,JumpballPoss')
+headers = ['URL','GameType','Location','Date','Time','WinningTeam','Quarter','SecLeft','AwayTeam','AwayPlay','AwayScore','HomeTeam','HomePlay','HomeScore','Shooter','ShotType','ShotOutcome','ShotDist','Assister','Blocker','FoulType','Fouler','Fouled','Rebounder','ReboundType','ViolationPlayer','ViolationType','TimeoutTeam','FreeThrowShooter','FreeThrowOutcome','FreeThrowNum','EnterGame','LeaveGame','TurnoverPlayer','TurnoverType','TurnoverCause','TurnoverCauser','JumpballAwayPlayer','JumpballHomePlayer','JumpballPoss']
+#y = open('output_pbp.csv','a')
+#    y.write('URL,GameType,Location,Date,Time,WinningTeam,Quarter,SecLeft,AwayTeam,AwayPlay,AwayScore,HomeTeam,HomePlay,HomeScore,Shooter,ShotType,ShotOutcome,ShotDist,Assister,Blocker,FoulType,Fouler,Fouled,Rebounder,ReboundType,ViolationPlayer,ViolationType,TimeoutTeam,FreeThrowShooter,FreeThrowOutcome,FreeThrowNum,EnterGame,LeaveGame,TurnoverPlayer,TurnoverType,TurnoverCause,TurnoverCauser,JumpballAwayPlayer,JumpballHomePlayer,JumpballPoss')
 
 t = 1
 used_links = []
 for link in game_links:
-   if t % 15 ==0 and t != 0:
-      print('Sleeping...')
+   start = timer()
+   if t % 10 ==0 and t != 0:
+      print('Sleeping for 20 secs...')
       try:
         sleep(20)
       except:
@@ -348,16 +358,25 @@ for link in game_links:
          for link in used_links:
              c.write(link + '\n')
          c.close()
-         y.close()
          break
    try:
       bd = breakdown(pbp2(link))
-      for play in bd:
-        y.write('\n'+','.join([str(d) for d in play]))
+      print(np.shape(bd))
+      #plays_df = pd.concat([plays_df,pd.DataFrame(bd,columns=plays_df.columns)])
+      #plays_df = plays_df.drop_duplicates()
+      #plays_df.to_csv('./pbp_pandas_2011_18.csv',index=False)
+            #for play in bd:
+        #y.write('\n'+','.join([str(d) for d in play]))
+      with open('output_pbp.csv', 'a',encoding='utf-8',newline='') as file:
+          writer = csv.writer(file)
+          if os.stat('output_pbp.csv').st_size == 0:
+              writer.writerow(headers)
+          writer.writerows(bd)  
       used_links.append(link)
       print(str(len(game_links) - len(used_links) +1) + ' -- ' + link)
-      sleep(3)
+      #sleep(3)
       t+=1
+      print(f'Finished working on {link}. It took {timer() - start}s, with 0s of sleep.')
       if link == game_links[-1]:
           b = open('gamelinks.txt','w')
           b.close()
@@ -365,7 +384,8 @@ for link in game_links:
           for link in used_links:
               c.write(link + '\n')
           c.close()
-   except:
+   except Exception as error:
+      print(error)
       b = open('gamelinks.txt','w')
       for link in list(set(game_links) - set(used_links)):
           b.write(link + '\n')
@@ -374,5 +394,4 @@ for link in game_links:
       for link in used_links:
           c.write(link + '\n')
       c.close()
-      y.close()
       break
